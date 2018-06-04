@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+using System.Linq;
+
 using System;
 using System.Text;
 
@@ -26,12 +28,6 @@ public class Actions : MonoBehaviour {
     // Update is called once per frame
     void Update()
     {
-        if (!Actions.textMode && Input.GetKeyDown("m"))
-        {
-            Debug.Log("move");
-            movePlayerToPoint.moveToPoint(new Vector3(6.2f, 1f, 3.3f));
-        }
-
         if (!textMode && Input.GetKeyDown("t"))
         {
             textMode = true;
@@ -117,7 +113,7 @@ public class Actions : MonoBehaviour {
 	}
 
     /* parse response received from WIT */
-    private void parse_WIT_response(string WIT_response)
+    public void parse_WIT_response(string WIT_response)
     {
         /* convert response to JSON object */
         JObject jObject = JObject.Parse(WIT_response);

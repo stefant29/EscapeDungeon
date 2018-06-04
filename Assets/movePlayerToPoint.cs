@@ -12,7 +12,7 @@ public class movePlayerToPoint : MonoBehaviour {
 	void Start ()
 	{
 		/* set a default target */
-		target = new Vector3 (6.0f, transform.position.y, 1.3f);
+		target = new Vector3 (0.0f, transform.position.y, 0.0f);
 	}
 
 	void Update ()
@@ -24,14 +24,15 @@ public class movePlayerToPoint : MonoBehaviour {
 		/* move towards the specified target */
 		if (!moveEnded) 
 			transform.position = Vector3.MoveTowards (transform.position, target, speed * Time.deltaTime);
-
-		// Debug.Log(transform.position + "    " + EPSILON);
 	}
 
 	/* start movement to given vector target */
 	public static void moveToPoint(Vector3 target_vector, float range = 0.01f) {
+		// set RANGE in which to look for
 		EPSILON = range;
-		target = target_vector;
+		// set the position x/z (y is constant - player's y)
+		target.x = target_vector.x;
+		target.z = target_vector.z;
 		/* set moving not ended */
 		moveEnded = false;
 	}
