@@ -7,7 +7,8 @@ using System.Globalization;
 using System.Threading;
 using System.IO;
 
-using UnityEditor;
+// using UnityEditor;
+using Newtonsoft.Json.Linq;
  
 [RequireComponent (typeof (AudioSource))]
 
@@ -29,18 +30,20 @@ public class SingleMicrophoneCapture : MonoBehaviour
 	bool spoken = false;
 	// temporary folder name for recordings
 	string recordingsFolderName;
+	// interval to start the recording early
+	int delta = 25000;
 
 
 	/* function called before exiting the application */
  	void OnApplicationQuit() {
 		// delete the folder containing microphone recordings
 		Debug.Log("Removing recordings folder: " + recordingsFolderName);
-		FileUtil.DeleteFileOrDirectory(recordingsFolderName);
+		// FileUtil.DeleteFileOrDirectory(recordingsFolderName);
     }
 
 	/* function called at the initialization */
 	void Start() {
-		recordingsFolderName = Application.dataPath + "/MicRec/";
+		recordingsFolderName = Application.persistentDataPath + "/MicRec/";
 		initMic();
 	}
 
@@ -82,19 +85,22 @@ public class SingleMicrophoneCapture : MonoBehaviour
 			pauseInSpeaking ++;
 		}
 
-		if (spoken && pauseInSpeaking == 50) {
+		if (spoken && pauseInSpeaking == 80) {
 			// reset flag
 			spoken = false;
 
 			// get time when speaker stops his speech
 			stopSpeaking = Microphone.GetPosition(null);
 
-			// compute the number of samples recorded
-			long noSamples = stopSpeaking - startSpeaking;
+			// compute the number of samples recorded with delta time before the start
+			long noSamples = stopSpeaking - startSpeaking + delta;
 
 			// get the samples
 			float[] data = new float[noSamples];
-			audioSource.clip.GetData(data, (int)startSpeaking);
+			if ((int)startSpeaking-delta < 0)
+				audioSource.clip.GetData(data, 0);
+			else
+				audioSource.clip.GetData(data, (int)startSpeaking-delta);
 
 			// compute clip length: number of samples / frequency_of_sample
 			int clipLength = (int)Math.Ceiling(noSamples * 1.0f / audioSource.clip.frequency);
@@ -140,7 +146,8 @@ public class SingleMicrophoneCapture : MonoBehaviour
 		Debug.Log("Response: " + www.text);
 
 		// parse and call methods returned from wit.ai
-		// Actions.parse_WIT_response(www.text);
+		JObject jObject = JObject.Parse(www.text);
+		GetComponent<Actions>().m_MyText.text = jObject["_text"].ToString();
 		GetComponent<Actions>().parse_WIT_response(www.text);
 	}
 }

@@ -20,6 +20,8 @@ public class Actions : MonoBehaviour {
 
 	public GameObject mini_key;
 
+	public Text m_MyText;
+
 	// Use this for initialization
 	void Start () {
 		MonoBehaviour.print("Start");
@@ -117,6 +119,8 @@ public class Actions : MonoBehaviour {
     {
         /* convert response to JSON object */
         JObject jObject = JObject.Parse(WIT_response);
+	
+		m_MyText.text = jObject["_text"].ToString();
 
         /* get entities from response */
         JToken jEntities = jObject["entities"];
@@ -141,7 +145,7 @@ public class Actions : MonoBehaviour {
                 //Debug.Log("jAction: " + action);
 
                 if (action.Equals("unlock")) {
-                    applyAction(action, "door");
+					applyAction(action, "door");
                     continue;
                 }
 
