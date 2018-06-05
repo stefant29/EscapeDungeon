@@ -16,6 +16,7 @@ public class Actions : MonoBehaviour {
 	public InputField inputField;
 	public Camera _camera;
 	public Canvas canvas;
+	public Canvas messageCanvas;
 	public static List<GameObject> inventory = new List<GameObject> ();
 
 	public GameObject mini_key;
@@ -53,9 +54,9 @@ public class Actions : MonoBehaviour {
 		GameObject[] objs = GameObject.FindGameObjectsWithTag (tag);
 		for (int i = 0; i < objs.Length; i++) {
 			/* find the object in range of player's sight */
-			if (inRangeSight (objs[i].GetComponent<Renderer>().bounds.center, delta, tag)) {
+			if (inRangeSight (objs[i].GetComponent<BoxCollider>().bounds.center, delta, tag)) {
 				/* return the object */
-				Debug.Log ("Object " + i + " found.");	
+				Debug.Log ("Object " + objs[i].name + " found.");	
 				return objs[i];
 			}
 		}
@@ -126,12 +127,13 @@ public class Actions : MonoBehaviour {
         JToken jEntities = jObject["entities"];
 
         /* get actions and parameters */
-        JArray jActions = (JArray)jEntities["action"];
+        JArray jActions = (JArray)jEntities["intent"];
         JArray jParameters = (JArray)jEntities["parameter"];
-        
 
         // deactivate the text InputField 
         textMode = false;
+
+		Debug.Log(jObject);
 
 		// TODO: "unlock and open the door" -> GOOD
 		// TODO: "open and unlock the door" -> JUST UNLOCK!!!!
@@ -141,7 +143,7 @@ public class Actions : MonoBehaviour {
         if (jActions != null)
             /* for each action */
             foreach (JToken jAction in jActions) {
-                string action = (string)jAction[(string)jAction["type"]];
+                string action = (string)jAction["value"];
                 //Debug.Log("jAction: " + action);
 
                 if (action.Equals("unlock")) {
@@ -219,21 +221,16 @@ public class Actions : MonoBehaviour {
 		case "key":
 			GameObject key = getObjectInSight("Key", 5f);
 			if (key && !inventory.Contains(key)) {
-				// move item into "Inventory" 
-				key.SetActive(false);
+				// move key to messageCanvas
+				key.transform.SetParent(messageCanvas.transform);
+				key.transform.position = messageCanvas.transform.position;
+				key.transform.localScale = new Vector3(1,1,1);
+				key.transform.rotation = Quaternion.identity;
 
-				// draw 
-				GameObject key_object = (GameObject)Instantiate (mini_key);
-				key_object.name = key.name;
-				key_object.transform.SetParent (canvas.transform);
-				key_object.transform.position = new Vector3 (Screen.width*0.95f,Screen.height*0.95f,0);
-
+				// add key to inventory list
 				inventory.Add (key);
-				Debug.Log ("Key " + key + " in hand ");
 				break;
 			}
-			break;
-		case "1":
 			break;
 		case "2":
 			break;
@@ -315,8 +312,8 @@ public class Actions : MonoBehaviour {
 	public bool useInventoryKey(GameObject door) {
 		for (int i = 0; i < inventory.Count; i++) {
 			if (inventory [i].tag == "Key" && door.GetComponent<Door> ().unlock (inventory [i])) {
-				Debug.Log("destroying: " + GameObject.Find("Canvas/" + inventory[i].name));
-				Canvas.Destroy(GameObject.Find("Canvas/" + inventory[i].name));
+				Debug.Log("destroying: " + inventory[i]);
+				Destroy(inventory[i]);
 				inventory.Remove (inventory [i]);
 				return true;
 			}
