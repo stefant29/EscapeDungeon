@@ -25,7 +25,7 @@ public class Actions : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		MonoBehaviour.print("Start");
+		MonoBehaviour.print("Start " + Screen.width + "   " + Screen.height);
 	}
 
     // Update is called once per frame
@@ -100,7 +100,7 @@ public class Actions : MonoBehaviour {
 
 	/* replace spaces with %20 */
 	IEnumerator callWitAI (string message) {
-		Debug.Log("Wit call: " + message);
+		// Debug.Log("Wit call: " + message);
 		// construct the headers needed to authenticate on wit.ai
 		Dictionary<string, string> headers = new Dictionary<string,string>();
 		headers.Add("Authorization", "Bearer QLLF3GMFKHF3L5ZHYPNO6KJU2D2ZP4EE");
@@ -216,31 +216,21 @@ public class Actions : MonoBehaviour {
 	}
 
 	public void take(string parameter) {
-		/* switch on what to open */
-		switch (parameter) {
-		case "key":
-			GameObject key = getObjectInSight("Key", 5f);
-			if (key && !inventory.Contains(key)) {
-				// move key to messageCanvas
-				key.transform.SetParent(messageCanvas.transform);
-				key.transform.position = messageCanvas.transform.position;
-				key.transform.localScale = new Vector3(1,1,1);
-				key.transform.rotation = Quaternion.identity;
+		GameObject object_to_take = getObjectInSight(FirstLetterToUpper(parameter), 5f);
+		if (object_to_take && !inventory.Contains(object_to_take)) {
+			// object has to be scaled before assigning its parent to canvas
+			object_to_take.transform.localScale *= 500;  // 500 == 1 / canvas.rectTransform.scale (nu poate fi accesat?????)
+			
+			object_to_take.transform.SetParent(messageCanvas.transform, false);
+			object_to_take.transform.localPosition = messageCanvas.transform.localPosition;
+			// Debug.Log("1: "+messageCanvas.GetComponent<RectTransform>().sizeDelta);
+			// Debug.Log("2: "+messageCanvas.GetComponent<RectTransform>().rect);
+			// object_to_take.transform.localScale = new Vector3(1,1,1);
+			// Debug.Log("2: "+object_to_take.transform.lossyScale);
+			object_to_take.transform.rotation = Quaternion.identity;
 
-				// add key to inventory list
-				inventory.Add (key);
-				break;
-			}
-			break;
-		case "2":
-			break;
-		case "3":
-			break;
-		case "4":
-			break;
-		default:
-			Debug.LogError ("input unknown: Cannot take " + parameter);
-			break;
+			// add key to inventory list
+			inventory.Add (object_to_take);
 		}
 	}
 
@@ -252,7 +242,6 @@ public class Actions : MonoBehaviour {
 			GameObject door = getObjectInSight("Door", 5f);
 			if (door && door.GetComponent<Door> ().locked)
 				useInventoryKey (door);
-
 			break;
 		case "1":
 			break;
