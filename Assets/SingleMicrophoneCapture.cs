@@ -19,7 +19,7 @@ public class SingleMicrophoneCapture : MonoBehaviour
 
 	float[] clipSampleData = new float[1024];
 	// minimum noise level
-	float minimumLevel = 0.0003f;
+	float minimumLevel = 0.001f;
 	// duration of noise before the current speech is stopped
 	long pauseInSpeaking = 0;
 	// moment of time when the speaker starst talking

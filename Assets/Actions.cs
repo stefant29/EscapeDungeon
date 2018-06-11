@@ -99,7 +99,8 @@ public class Actions : MonoBehaviour {
 	}
 
 	/* replace spaces with %20 */
-	IEnumerator callWitAI (string message) {
+	public IEnumerator callWitAI (string message) {
+		Debug.Log("Called Wit.AI WITH: " + message);
 		// Debug.Log("Wit call: " + message);
 		// construct the headers needed to authenticate on wit.ai
 		Dictionary<string, string> headers = new Dictionary<string,string>();
@@ -120,6 +121,7 @@ public class Actions : MonoBehaviour {
     {
         /* convert response to JSON object */
         JObject jObject = JObject.Parse(WIT_response);
+		Debug.Log("response from WIT: " + jObject);
 	
 		m_MyText.text = jObject["_text"].ToString();
 
