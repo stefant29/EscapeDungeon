@@ -17,11 +17,14 @@ public class Actions : MonoBehaviour {
 	public Camera _camera;
 	public GameObject WatsonSpeechToText;
 	public GameObject WatsonTextToSpeech;
+	public GameObject Picture;
 
 	public static List<GameObject> inventory = new List<GameObject> ();
 	private GameObject selectedItemInventory = null;
 	private bool goForward = false;
 	public Text m_MyText;
+
+	private bool pickCategory = false;
 
 	private int commandExecuted = -20;
 
@@ -44,7 +47,7 @@ public class Actions : MonoBehaviour {
         }
 
 		if (!canTalk()) {
-			Debug.Log("set to false");
+			// Debug.Log("set to false");
 			// TODO: uncomment
 			// WatsonSpeechToText.GetComponent<ExampleStreaming>().Active = false;
 		}
@@ -52,7 +55,9 @@ public class Actions : MonoBehaviour {
 		if (commandExecuted > -20 && canTalk()) {
 			commandExecuted = -20;
 			m_MyText.text = "You can now speak again.";
-			StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("You can now speak again."));
+
+			// TODO: uncomment
+			// StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("You can now speak again."));
 
 			// TODO: uncomment
 			// WatsonSpeechToText.GetComponent<ExampleStreaming>().Active = true;
@@ -121,10 +126,13 @@ public class Actions : MonoBehaviour {
 		Vector3 point = _camera.WorldToViewportPoint(position);
 		RaycastHit hitInfo;
 
-		// is the given position in the FOV?
+		if (tag != null) 			// is the given position in the FOV?
+			return point.z > 0 && point.z < delta && point.x > 0 && point.x < 1 && point.y > 0 && point.y < 1 &&
+				// and no other objects are in between the camera and the given position?
+				Physics.Linecast(_camera.transform.position, position, out hitInfo) && hitInfo.collider.tag == tag;
+
 		return point.z > 0 && point.z < delta && point.x > 0 && point.x < 1 && point.y > 0 && point.y < 1 &&
-			// and no other objects are in between the camera and the given position?
-			Physics.Linecast(_camera.transform.position, position, out hitInfo) && hitInfo.collider.tag == tag;
+			Physics.Linecast(_camera.transform.position, position, out hitInfo);			
 	}
 
 	/* method called when the "InputField" is changed */
@@ -141,19 +149,16 @@ public class Actions : MonoBehaviour {
 		headers.Add("Authorization", "Bearer QLLF3GMFKHF3L5ZHYPNO6KJU2D2ZP4EE");
 
 		// send WWW request to URL
-		WWW www = new WWW("https://api.wit.ai/message?v=20180521&q="+message, null, headers);
+		WWW www = new WWW("https://api.wit.ai/message?v=20180521&q=" + message, null, headers);
 		
 		// so it won't stall the main thread
 		yield return www;
-		
-
-		
+				
 		// parse and call methods returned from wit.ai
 		parse_WIT_response(www.text);
 
 		// Set the current frame as time when the last action was executed
 		commandExecuted = Time.frameCount;
-		Debug.Log("2");
 	}
 
     /* parse response received from WIT */
@@ -164,19 +169,59 @@ public class Actions : MonoBehaviour {
 	
 		m_MyText.text = jObject["_text"].ToString();
 
-
-
         /* get entities from response */
         JToken jEntities = jObject["entities"];
 
         /* get actions and parameters */
         JArray jActions = (JArray)jEntities["intent"];
         JArray jParameters = (JArray)jEntities["parameter"];
+        JArray jNumbers = (JArray)jEntities["number"];
+        JArray jQuiz = (JArray)jEntities["type_of_quiz"];
 
         // deactivate the text InputField 
         textMode = false;
 
 		Debug.Log(jObject);
+
+		/* if a quiz category was given */
+		if (pickCategory && jQuiz != null) {
+			if (jQuiz.Count > 1) {
+				// StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("Your response must contain only one category."));
+				m_MyText.text = "Your response must contain only one category.";
+			} else {
+				foreach (JToken Quiz in jQuiz) {
+					string response = (string)(Quiz["value"]);
+					// select the domain, set the responses and load the first image
+					Picture.GetComponent<LoadImages>().selectQuizDomain(response);
+					Picture.GetComponent<LoadImages>().setRandomResponses();
+        			Picture.GetComponent<LoadImages>().loadNextImage();
+
+					// StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("To pass to the next room, you have to correctly guess the next pictures."));
+					m_MyText.text = "To pass to the next room, you have to correctly guess the next pictures.";
+				}
+			}
+		}
+
+		 /* if a number was given */
+        if (jNumbers != null) {
+			if (jNumbers.Count > 1) {
+				// StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("Your response must contain only one number."));
+				m_MyText.text = "Your response must contain only one number.";
+			} else {
+				foreach (JToken JNumber in jNumbers) {
+					int response = (int)(JNumber["value"]);
+					if (Picture.GetComponent<LoadImages>().checkCorrect(response)) {
+						// StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("Good."));
+						m_MyText.text = "Good.";
+						commandExecuted = Time.frameCount;
+					} else {
+						// StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("Wrong guess. Try again."));
+						m_MyText.text = "Wrong guess. Try again.";
+						commandExecuted = Time.frameCount;
+					}
+				}
+			}
+		}
 
 		// TODO: "unlock and open the door" -> GOOD
 		// TODO: "open and unlock the door" -> JUST UNLOCK!!!!
@@ -207,7 +252,8 @@ public class Actions : MonoBehaviour {
     public void parseInput(string input) {
 		// set response guide for user
 		m_MyText.text = "Waiting for response from WIT.ai";
-		StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("Wait for a moment."));
+		// TODO: uncomment
+		// StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("Processing..."));
 
 		// send input to WIT to parse: replace space with %20
 		StartCoroutine(callWitAI(input.Replace(" ", "%20")));
@@ -363,4 +409,18 @@ public class Actions : MonoBehaviour {
 		// Move player to its current position
 		movePlayerToPoint.moveToObject(gameObject, 2f);
 	}
+
+	void OnTriggerEnter(Collider other) {
+		if (other.name != "Room1_trigger")
+			return;
+
+		// StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("Please pick a category: ACTORS, CARS, CARTOONS or PAINTINGS."));
+		m_MyText.text = "Please pick a category: ACTORS, CARS, CARTOONS or PAINTINGS.";
+
+		// let the user pick a category
+		pickCategory = true;
+
+		// make transition
+		other.GetComponent<MakeTransitionToRoom1>().makeTransitionStart();
+    }
 }

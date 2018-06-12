@@ -302,7 +302,8 @@
      <Compile Include="Assets\imports\Watson\ThirdParty\FullSerializer\Reflection\fsReflectionUtility.cs" />
      <Compile Include="Assets\imports\Watson\ThirdParty\FullSerializer\Reflection\fsTypeCache.cs" />
      <Compile Include="Assets\imports\Watson\ThirdParty\MiniJSON\MiniJSON.cs" />
-     <Compile Include="Assets\LoadImage.cs" />
+     <Compile Include="Assets\LoadImages.cs" />
+     <Compile Include="Assets\MakeTransitionToRoom1.cs" />
      <Compile Include="Assets\movePlayerToPoint.cs" />
      <Compile Include="Assets\SavWav.cs" />
      <Compile Include="Assets\SingleMicrophoneCapture.cs" />
