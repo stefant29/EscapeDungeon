@@ -15,40 +15,93 @@ public class Actions : MonoBehaviour {
 	public static bool textMode = false;
 	public InputField inputField;
 	public Camera _camera;
-	public Canvas canvas;
-	public Canvas messageCanvas;
+	public GameObject WatsonSpeechToText;
+	public GameObject WatsonTextToSpeech;
+
 	public static List<GameObject> inventory = new List<GameObject> ();
-
-	public GameObject mini_key;
-
+	private GameObject selectedItemInventory = null;
+	private bool goForward = false;
 	public Text m_MyText;
 
-	// Use this for initialization
-	void Start () {
-		MonoBehaviour.print("Start " + Screen.width + "   " + Screen.height);
-	}
+	private int commandExecuted = -20;
 
+	// Use this for initialization
+	void Start () {}
+
+	public bool canTalk() {
+		return Time.frameCount - commandExecuted >= 20;
+	}
     // Update is called once per frame
-    void Update()
-    {
-        if (!textMode && Input.GetKeyDown("t"))
-        {
+    void Update() {
+        if (!textMode && Input.GetKeyDown("t")) {
             textMode = true;
             // activate text input mode
             inputField.ActivateInputField();
         }
 
+		if (Input.GetKeyDown("y")) {
+			Stop();
+        }
+
+		if (!canTalk()) {
+			Debug.Log("set to false");
+			// TODO: uncomment
+			// WatsonSpeechToText.GetComponent<ExampleStreaming>().Active = false;
+		}
+
+		if (commandExecuted > -20 && canTalk()) {
+			commandExecuted = -20;
+			m_MyText.text = "You can now speak again.";
+			StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("You can now speak again."));
+
+			// TODO: uncomment
+			// WatsonSpeechToText.GetComponent<ExampleStreaming>().Active = true;
+		}
+
+		// Go forward
+		if (goForward) {
+			// Move to a point in front of the camera
+			movePlayerToPoint.moveToPoint(_camera.transform.position + _camera.transform.forward * 0.01f);
+
+			// If an object is in front of the camera, stop going forward
+			if (ObjectBetween(_camera.transform.position, _camera.transform.position + _camera.transform.forward * 2f))
+			// if (ObjectBetween(_camera.transform.position, _camera.transform.forward, 0.1f))
+				goForward = false;
+		}
 
 		/* Draw lines from player (camera) to each door */
-		GameObject[] objs = GameObject.FindGameObjectsWithTag ("Door");
-		Color[] colors = {Color.red, Color.black, Color.yellow};
-		for (int i = 0; i < objs.Length; i++) {
-			Vector3 fromPosition = _camera.transform.position;
- 			Vector3 toPosition = objs[i].GetComponent<Renderer>().bounds.center;
- 			Vector3 direction = toPosition - fromPosition;
-			Debug.DrawRay(fromPosition, direction, colors[i]);
+		/* 
+			GameObject[] objs = GameObject.FindGameObjectsWithTag ("Door");
+			Color[] colors = {Color.red, Color.black, Color.yellow};
+			for (int i = 0; i < objs.Length; i++) {
+				Vector3 fromPosition = _camera.transform.position;
+				Vector3 toPosition = objs[i].GetComponent<Renderer>().bounds.center;
+				Vector3 direction = toPosition - fromPosition;
+				Debug.DrawRay(fromPosition, direction, colors[i]);
+			}
+		*/
+
+		/* Move selectedItemInventory ahead of the player */
+		if (selectedItemInventory) {
+			Vector3 newPos = _camera.transform.position + _camera.transform.forward * 2.0f;
+			// keep item on top of ground and not too high
+			newPos.y = Mathf.Clamp(newPos.y, _camera.transform.position.y * 0.25f, _camera.transform.position.y * 0.75f);
+			
+			selectedItemInventory.transform.position = newPos;
+			selectedItemInventory.transform.rotation = new Quaternion( 0.0f, _camera.transform.rotation.y, 0.0f, _camera.transform.rotation.w );
 		}
     }
+
+	/* returns True if an object is between the two positions given as parameters */
+	private bool ObjectBetween(Vector3 startPos, Vector3 endPos) {
+		RaycastHit hitInfo;
+		return Physics.Linecast(startPos, endPos, out hitInfo) && hitInfo.collider.name != "Floor";
+	}
+
+	private bool ObjectBetween(Vector3 startPos, Vector3 direction, float radius) {
+		RaycastHit hitInfo;
+		return Physics.SphereCast(startPos, radius, direction, out hitInfo, 1f) && hitInfo.collider.name != "Floor";
+	}
 
     GameObject getObjectInSight(string tag, float delta) {
 		GameObject[] objs = GameObject.FindGameObjectsWithTag (tag);
@@ -62,25 +115,6 @@ public class Actions : MonoBehaviour {
 		}
 		return null;
 	}
-
-	/* checks if item is in inventory 
-	public bool containsInventory(string item) {
-		for (int i = 0; i < inventory.Count; i++)
-			if (inventory [i].name == item)
-				return true;
-		return false;
-	}
-	/* remove item from inventory 
-	public void dropFromInventory(string item) {
-		for (int i = 0; i < inventory.Count; i++)
-			if (inventory [i].name == item) {
-				inventory.Remove (inventory [i]);
-
-				Debug.Log (inventory.Count);
-				break;
-			}
-	}
-	*/
 
 	/* returns true if the given item is in range and in sight */
 	public bool inRangeSight(Vector3 position, float delta, string tag) {
@@ -112,18 +146,25 @@ public class Actions : MonoBehaviour {
 		// so it won't stall the main thread
 		yield return www;
 		
+
+		
 		// parse and call methods returned from wit.ai
 		parse_WIT_response(www.text);
+
+		// Set the current frame as time when the last action was executed
+		commandExecuted = Time.frameCount;
+		Debug.Log("2");
 	}
 
     /* parse response received from WIT */
-    public void parse_WIT_response(string WIT_response)
-    {
+    public void parse_WIT_response(string WIT_response) {
         /* convert response to JSON object */
         JObject jObject = JObject.Parse(WIT_response);
 		Debug.Log("response from WIT: " + jObject);
 	
 		m_MyText.text = jObject["_text"].ToString();
+
+
 
         /* get entities from response */
         JToken jEntities = jObject["entities"];
@@ -146,32 +187,33 @@ public class Actions : MonoBehaviour {
             /* for each action */
             foreach (JToken jAction in jActions) {
                 string action = (string)jAction["value"];
-                //Debug.Log("jAction: " + action);
 
-                if (action.Equals("unlock")) {
-					applyAction(action, "door");
-                    continue;
-                }
+				/* get all objects in the message */
+				if (jParameters != null) {
+					foreach (JToken jParameter in jParameters) {
+						string parameter = (string) jParameter[(string)jParameter["type"]];
 
-                /* get all objects in the message */
-                if (jParameters != null)
-                    foreach (JToken jParameter in jParameters) {
-                        string parameter = (string) jParameter[(string)jParameter["type"]];
-                        //Debug.Log("jAction: " + action + ",  jobject_to_take: " + parameter);
-
-                        /* try to apply each action on each object */
-                        applyAction(action, parameter);
-                    }
+						/* try to apply each action on each object */
+						applyAction(action, parameter);
+					}
+				// Actions with NO parameters
+				} else 
+					// Apply action with NULL as parameter
+					applyAction(action, null);
             }
     }
 
 	/* method called at the end of InputField edit */
     public void parseInput(string input) {
+		// set response guide for user
+		m_MyText.text = "Waiting for response from WIT.ai";
+		StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("Wait for a moment."));
+
 		// send input to WIT to parse: replace space with %20
 		StartCoroutine(callWitAI(input.Replace(" ", "%20")));
 	}
 
-	/* call an action with a parameter */
+	/* Call an action with a parameter */
 	public void applyAction(string action, string parameter) {
 		Debug.Log("***********" + action + "***********" + parameter + "***********");
         
@@ -183,11 +225,14 @@ public class Actions : MonoBehaviour {
 		case "take":
 			take (parameter);
 			break;
+		case "drop":
+			DropCurrentItem ();
+			break;
 		case "unlock":
 			unlock (parameter);
 			break;
 		case "go":
-			go(parameter);
+			Go(parameter);
 			break;
 		default:
 			Debug.LogError ("Action unknown: " + action);
@@ -195,6 +240,7 @@ public class Actions : MonoBehaviour {
 		}
 	}
 
+	/* Open the object with tag given as parameter */
 	public void open(string parameter) {
 		/* switch on what to open */
 		switch (parameter) {
@@ -203,63 +249,72 @@ public class Actions : MonoBehaviour {
 			if (door && !door.GetComponent<Door> ().locked)
 				StartCoroutine (door.GetComponent<Door> ().Move ());
 			break;
-		case "1":
-			break;
-		case "2":
-			break;
-		case "3":
-			break;
-		case "4":
-			break;
 		default:
 			Debug.LogError ("input unknown: Cannot open " + parameter);
 			break;
 		}
 	}
 
+	/* Take into hand/inventory the object with tag given as parameter */
 	public void take(string parameter) {
 		GameObject object_to_take = getObjectInSight(FirstLetterToUpper(parameter), 5f);
 		if (object_to_take && !inventory.Contains(object_to_take)) {
-			// object has to be scaled before assigning its parent to canvas
-			object_to_take.transform.localScale *= 500;  // 500 == 1 / canvas.rectTransform.scale (nu poate fi accesat?????)
-			
-			object_to_take.transform.SetParent(messageCanvas.transform, false);
-			object_to_take.transform.localPosition = messageCanvas.transform.localPosition;
-			// Debug.Log("1: "+messageCanvas.GetComponent<RectTransform>().sizeDelta);
-			// Debug.Log("2: "+messageCanvas.GetComponent<RectTransform>().rect);
-			// object_to_take.transform.localScale = new Vector3(1,1,1);
-			// Debug.Log("2: "+object_to_take.transform.lossyScale);
-			object_to_take.transform.rotation = Quaternion.identity;
-
 			// add key to inventory list
 			inventory.Add (object_to_take);
+
+			// drop current item form hand
+			DropCurrentItem();
+			
+			// Select item
+			selectedItemInventory = object_to_take;
+
+			// Set parent as null
+			selectedItemInventory.transform.SetParent(null);
+
+			// Reactivate collider
+			selectedItemInventory.GetComponent<BoxCollider>().isTrigger = true;
+
+			// Destroy rigidBody for selected item
+			Destroy (selectedItemInventory.GetComponent<Rigidbody>());
 		}
 	}
 
+	/* Drops current item form hand */
+	public void DropCurrentItem() {
+		if (selectedItemInventory) {
+			// Add rigidBody to item deselected
+			selectedItemInventory.AddComponent<Rigidbody>();
+			selectedItemInventory.GetComponent<Rigidbody>().mass = 10000;
+			// remove the collider
+			selectedItemInventory.GetComponent<BoxCollider>().isTrigger = false;
+			// remove item from inventory
+			inventory.Remove(selectedItemInventory);
+			// set current item to null
+			selectedItemInventory = null;
+		}
+	}
 
 	public void unlock(string parameter) {
 		/* switch on what to unlock */
 		switch (parameter) {
 		case "door":
 			GameObject door = getObjectInSight("Door", 5f);
-			if (door && door.GetComponent<Door> ().locked)
+			// Debug.Log("Dooor: " + door);
+			if (door && door.GetComponent<Door> ().locked)// {
+				// Debug.Log("if locked");
 				useInventoryKey (door);
-			break;
-		case "1":
-			break;
-		case "2":
-			break;
-		case "3":
-			break;
-		case "4":
+			// } else {
+				// Debug.Log("ELSE LOCKED");
+			// }
 			break;
 		default:
 			Debug.LogError ("input unknown: Cannot unlock " + parameter);
 			break;
 		}
 	}
-	public string FirstLetterToUpper(string str)
-	{
+
+	/* Convert string to first letter uppercase */
+	public string FirstLetterToUpper(string str) {
 		if (str == null)
 			return null;
 
@@ -269,34 +324,22 @@ public class Actions : MonoBehaviour {
 		return str.ToUpper();
 	}
 
-	public void go(string parameter) {
+	/* Go to the object with tag given as parameter */
+	public void Go(string parameter) {
+		// if no parameter given, go forward
+		if (parameter == null) {
+			Debug.Log("Go Forward");
+			goForward = true;
+			return;
+		}
 
+		// if tag given, go to object with tag
 		GameObject go_to_object = getObjectInSight(FirstLetterToUpper(parameter), 15f);
-			if (go_to_object)
-				movePlayerToPoint.moveToObject(go_to_object, 1.2f);
-
-		// /* switch on what to unlock */
-		// switch (parameter) {
-		// case "door":
-		// 	GameObject door = getObjectInSight("Door", 15f);
-		// 	if (door)
-		// 		movePlayerToPoint.moveToObject(door, 1.2f);
-		// 	break;
-		// case "table":
-		// 	GameObject table = getObjectInSight("Table", 15f);
-		// 	if (table)
-		// 		movePlayerToPoint.moveToObject(table, 1.2f);
-		// 	break;
-		// case "2":
-		// 	break;
-		// case "3":
-		// 	break;
-		// case "4":
-		// 	break;
-		// default:
-		// 	Debug.LogError ("input unknown: Cannot go to " + parameter);
-		// 	break;
-		// }
+		if (go_to_object) {
+			Debug.Log("Go 1");
+			movePlayerToPoint.moveToObject(go_to_object, 2f);
+		} else
+			Debug.Log("Go 2");
 	}
 
 	/* unlock the given door */
@@ -310,5 +353,14 @@ public class Actions : MonoBehaviour {
 			}
 		}
 		return false;
+	}
+
+	/* Stop the current movement */
+	public void Stop() {
+		// reset bool "goForward"
+		goForward = false;
+
+		// Move player to its current position
+		movePlayerToPoint.moveToObject(gameObject, 2f);
 	}
 }

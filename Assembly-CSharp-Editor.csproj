@@ -146,11 +146,8 @@
  <Reference Include="Newtonsoft.Json">
  <HintPath>D:/Scoala/EscapeDungeon/Assets/imports/Plugins/Newtonsoft.Json.dll</HintPath>
  </Reference>
- <Reference Include="DotNetZip">
- <HintPath>D:/Scoala/EscapeDungeon/Assets/imports/Plugins/NuGet/Editor/DotNetZip.dll</HintPath>
- </Reference>
- <Reference Include="NugetForUnity">
- <HintPath>D:/Scoala/EscapeDungeon/Assets/imports/Plugins/NuGet/Editor/NugetForUnity.dll</HintPath>
+ <Reference Include="websocket-sharp">
+ <HintPath>D:/Scoala/EscapeDungeon/Assets/imports/Watson/Plugins/websocket-sharp.dll</HintPath>
  </Reference>
  <Reference Include="UnityEngine.Advertisements">
  <HintPath>C:/Users/Stefan/AppData/LocalLow/Unity/cache/packages/packages.unity.com/com.unity.ads@2.0.3/UnityEngine.Advertisements.dll</HintPath>
@@ -172,9 +169,6 @@
  </Reference>
  <Reference Include="UnityEngine.StandardEvents">
  <HintPath>C:/Users/Stefan/AppData/LocalLow/Unity/cache/packages/packages.unity.com/com.unity.standardevents@1.0.10/UnityEngine.StandardEvents.dll</HintPath>
- </Reference>
- <Reference Include="websocket-sharp">
- <HintPath>D:/Scoala/EscapeDungeon/Assets/imports/Watson/Plugins/websocket-sharp.dll</HintPath>
  </Reference>
   </ItemGroup>
   <ItemGroup>

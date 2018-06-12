@@ -52,6 +52,8 @@
   </ItemGroup>
   <ItemGroup>
      <Compile Include="Assets\Actions.cs" />
+     <Compile Include="Assets\ExampleStreaming.cs" />
+     <Compile Include="Assets\ExampleTextToSpeech.cs" />
      <Compile Include="Assets\imports\Alex&apos;s Door System Lite\Scripts\ConditionalHideAttribute.cs" />
      <Compile Include="Assets\imports\Alex&apos;s Door System Lite\Scripts\Detection.cs" />
      <Compile Include="Assets\imports\Alex&apos;s Door System Lite\Scripts\Door.cs" />
@@ -144,7 +146,6 @@
      <Compile Include="Assets\imports\GoogleVR\Scripts\Utilities\GvrUIHelpers.cs" />
      <Compile Include="Assets\imports\GoogleVR\Scripts\Utilities\GvrVRHelpers.cs" />
      <Compile Include="Assets\imports\GoogleVR\Scripts\Video\GvrVideoPlayerTexture.cs" />
-     <Compile Include="Assets\imports\Watson\Examples\ServiceExamples\Scripts\ExampleStreaming.cs" />
      <Compile Include="Assets\imports\Watson\Scripts\Connection\RESTConnector.cs" />
      <Compile Include="Assets\imports\Watson\Scripts\Connection\WSConnector.cs" />
      <Compile Include="Assets\imports\Watson\Scripts\Debug\DebugReactor.cs" />
@@ -301,6 +302,7 @@
      <Compile Include="Assets\imports\Watson\ThirdParty\FullSerializer\Reflection\fsReflectionUtility.cs" />
      <Compile Include="Assets\imports\Watson\ThirdParty\FullSerializer\Reflection\fsTypeCache.cs" />
      <Compile Include="Assets\imports\Watson\ThirdParty\MiniJSON\MiniJSON.cs" />
+     <Compile Include="Assets\LoadImage.cs" />
      <Compile Include="Assets\movePlayerToPoint.cs" />
      <Compile Include="Assets\SavWav.cs" />
      <Compile Include="Assets\SingleMicrophoneCapture.cs" />
@@ -395,11 +397,8 @@
  <Reference Include="Newtonsoft.Json">
  <HintPath>D:/Scoala/EscapeDungeon/Assets/imports/Plugins/Newtonsoft.Json.dll</HintPath>
  </Reference>
- <Reference Include="DotNetZip">
- <HintPath>D:/Scoala/EscapeDungeon/Assets/imports/Plugins/NuGet/Editor/DotNetZip.dll</HintPath>
- </Reference>
- <Reference Include="NugetForUnity">
- <HintPath>D:/Scoala/EscapeDungeon/Assets/imports/Plugins/NuGet/Editor/NugetForUnity.dll</HintPath>
+ <Reference Include="websocket-sharp">
+ <HintPath>D:/Scoala/EscapeDungeon/Assets/imports/Watson/Plugins/websocket-sharp.dll</HintPath>
  </Reference>
  <Reference Include="UnityEngine.Advertisements">
  <HintPath>C:/Users/Stefan/AppData/LocalLow/Unity/cache/packages/packages.unity.com/com.unity.ads@2.0.3/UnityEngine.Advertisements.dll</HintPath>
@@ -421,9 +420,6 @@
  </Reference>
  <Reference Include="UnityEngine.StandardEvents">
  <HintPath>C:/Users/Stefan/AppData/LocalLow/Unity/cache/packages/packages.unity.com/com.unity.standardevents@1.0.10/UnityEngine.StandardEvents.dll</HintPath>
- </Reference>
- <Reference Include="websocket-sharp">
- <HintPath>D:/Scoala/EscapeDungeon/Assets/imports/Watson/Plugins/websocket-sharp.dll</HintPath>
  </Reference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

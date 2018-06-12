@@ -8,6 +8,9 @@ TagManager:
   - Key
   - Table
   - Lamp
+  - Torch
+  - Frame
+  - Picture
   layers:
   - Default
   - TransparentFX
