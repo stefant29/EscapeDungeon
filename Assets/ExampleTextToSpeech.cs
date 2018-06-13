@@ -39,15 +39,22 @@ public class ExampleTextToSpeech : MonoBehaviour
 
     void Start()
     {
+        
+    }
+
+    public IEnumerator initialize() {
         LogSystem.InstallDefaultReactors();
 
         //  Create credential and instantiate service
         Credentials credentials = new Credentials(_username, _password, _url);
         _textToSpeech = new TextToSpeech(credentials);
-    }
 
+        yield return null;
+    }
     public IEnumerator Speak(string message)
     {
+        if (_textToSpeech == null)
+            StartCoroutine(initialize());
         //  Synthesize
         _textToSpeech.Voice = VoiceType.en_US_Allison;
         _textToSpeech.ToSpeech(HandleToSpeechCallback, OnFail, message, true);

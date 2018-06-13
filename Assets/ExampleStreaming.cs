@@ -36,6 +36,7 @@ public class ExampleStreaming : MonoBehaviour
     #endregion
 
     public Text ResultsField;
+    public GameObject player;
 
     private int _recordingRoutine = 0;
     private string _microphoneID = null;
@@ -178,8 +179,16 @@ public class ExampleStreaming : MonoBehaviour
             {
                 foreach (var alt in res.alternatives)
                 {
-                    string text = string.Format("{0} ({1}, {2:0.00})\n", alt.transcript, res.final ? "Final" : "Interim", alt.confidence);
-                    Log.Debug("ExampleStreaming.OnRecognize()", text);
+                    string text = alt.transcript;
+                    if (res.final) {
+                        // stop movement
+                        if (text.Replace(" ", "").Equals("stop"))
+                            player.GetComponent<Actions>().Stop();
+                        // if the player is allowed to talk, call WIT Ai with the spoken command
+                        else if (player.GetComponent<Actions>().canTalk())
+                                StartCoroutine(player.GetComponent<Actions>().callWitAI(text.Replace(" ", "%20")));
+                    }
+                    // write text spoken on screen
                     ResultsField.text = text;
                 }
 

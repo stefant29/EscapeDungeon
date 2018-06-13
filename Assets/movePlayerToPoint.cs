@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/*
+ * Move the player to a given position: an xyz point or a GameObject
+ */
 public class movePlayerToPoint : MonoBehaviour {
 
 	public float speed = 3f;
@@ -9,14 +12,12 @@ public class movePlayerToPoint : MonoBehaviour {
 	public static bool moveEnded = true;
 	private static float EPSILON = 0.01f;
 
-	void Start ()
-	{
+	void Start () {
 		/* set a default target */
 		target = new Vector3 (0.0f, transform.position.y, 0.0f);
 	}
 
-	void Update ()
-	{
+	void Update () {
 		/* if player is at the target position, stop movement */
 		if (!moveEnded && equals(target, transform.position, EPSILON)) 
 			moveEnded = true;

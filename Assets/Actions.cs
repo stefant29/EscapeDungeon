@@ -26,13 +26,25 @@ public class Actions : MonoBehaviour {
 
 	private bool pickCategory = false;
 
-	private int commandExecuted = -20;
+	private int duration = 20;
 
-	// Use this for initialization
-	void Start () {}
+	private int commandExecuted = 0;
+
+	// Initializations
+	void Start () {
+		commandExecuted = duration * (-1);
+
+		// Starting instructions
+		StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak(
+						"You are now in a dungeon. To escape it, you must firstly find the key to unlock the door. " + 
+						"To control the environment, just say what you want to happen. To move around, use GO and STOP."));
+		m_MyText.text = "You are now in a dungeon. To escape it, you must firstly find the key to unlock the door. " + 
+						"To control the environment, just say what you want to happen. To move around, use GO and STOP.";
+		resetWaitTime(330);
+	}
 
 	public bool canTalk() {
-		return Time.frameCount - commandExecuted >= 20;
+		return Time.frameCount - commandExecuted >= duration;
 	}
     // Update is called once per frame
     void Update() {
@@ -52,8 +64,8 @@ public class Actions : MonoBehaviour {
 			// WatsonSpeechToText.GetComponent<ExampleStreaming>().Active = false;
 		}
 
-		if (commandExecuted > -20 && canTalk()) {
-			commandExecuted = -20;
+		if (commandExecuted > duration * (-1) && canTalk()) {
+			commandExecuted = duration * (-1);
 			m_MyText.text = "You can now speak again.";
 
 			// TODO: uncomment
@@ -85,6 +97,7 @@ public class Actions : MonoBehaviour {
 				Debug.DrawRay(fromPosition, direction, colors[i]);
 			}
 		*/
+		Debug.DrawLine(_camera.transform.position, _camera.transform.position + _camera.transform.forward * 0.01f, Color.red);
 
 		/* Move selectedItemInventory ahead of the player */
 		if (selectedItemInventory) {
@@ -157,8 +170,14 @@ public class Actions : MonoBehaviour {
 		// parse and call methods returned from wit.ai
 		parse_WIT_response(www.text);
 
-		// Set the current frame as time when the last action was executed
+		
 		commandExecuted = Time.frameCount;
+	}
+
+	// Set the ending time of an action as current frame and reset duration to a given duration
+	private void resetWaitTime(int time) {
+		commandExecuted = Time.frameCount;
+		duration = time;
 	}
 
     /* parse response received from WIT */
@@ -188,6 +207,7 @@ public class Actions : MonoBehaviour {
 			if (jQuiz.Count > 1) {
 				// StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("Your response must contain only one category."));
 				m_MyText.text = "Your response must contain only one category.";
+				resetWaitTime(90);
 			} else {
 				foreach (JToken Quiz in jQuiz) {
 					string response = (string)(Quiz["value"]);
@@ -196,8 +216,10 @@ public class Actions : MonoBehaviour {
 					Picture.GetComponent<LoadImages>().setRandomResponses();
         			Picture.GetComponent<LoadImages>().loadNextImage();
 
-					// StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("To pass to the next room, you have to correctly guess the next pictures."));
-					m_MyText.text = "To pass to the next room, you have to correctly guess the next pictures.";
+					// StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak(
+						// "To pass to the next room, you have to correctly guess the next pictures. Look at the options and answer with the number you think is correct."));
+					m_MyText.text = "To pass to the next room, you have to correctly guess the next pictures. Look at the options and answer with the number you think is correct.";
+					resetWaitTime(220);
 				}
 			}
 		}
@@ -207,17 +229,18 @@ public class Actions : MonoBehaviour {
 			if (jNumbers.Count > 1) {
 				// StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("Your response must contain only one number."));
 				m_MyText.text = "Your response must contain only one number.";
+				resetWaitTime(90);
 			} else {
 				foreach (JToken JNumber in jNumbers) {
 					int response = (int)(JNumber["value"]);
 					if (Picture.GetComponent<LoadImages>().checkCorrect(response)) {
 						// StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("Good."));
 						m_MyText.text = "Good.";
-						commandExecuted = Time.frameCount;
+						resetWaitTime(20);
 					} else {
 						// StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("Wrong guess. Try again."));
 						m_MyText.text = "Wrong guess. Try again.";
-						commandExecuted = Time.frameCount;
+						resetWaitTime(50);
 					}
 				}
 			}
@@ -254,6 +277,7 @@ public class Actions : MonoBehaviour {
 		m_MyText.text = "Waiting for response from WIT.ai";
 		// TODO: uncomment
 		// StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("Processing..."));
+		// resetWaitTime(70);
 
 		// send input to WIT to parse: replace space with %20
 		StartCoroutine(callWitAI(input.Replace(" ", "%20")));
@@ -374,7 +398,6 @@ public class Actions : MonoBehaviour {
 	public void Go(string parameter) {
 		// if no parameter given, go forward
 		if (parameter == null) {
-			Debug.Log("Go Forward");
 			goForward = true;
 			return;
 		}
@@ -411,16 +434,36 @@ public class Actions : MonoBehaviour {
 	}
 
 	void OnTriggerEnter(Collider other) {
-		if (other.name != "Room1_trigger")
-			return;
+		switch (other.name) {
+			case "Room1_enter":
+				if (!pickCategory) {
+					StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("Please pick a category: ACTORS, CARS, CARTOONS or PAINTINGS."));
+					m_MyText.text = "Please pick a category: ACTORS, CARS, CARTOONS or PAINTINGS.";
+					resetWaitTime(160);
 
-		// StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("Please pick a category: ACTORS, CARS, CARTOONS or PAINTINGS."));
-		m_MyText.text = "Please pick a category: ACTORS, CARS, CARTOONS or PAINTINGS.";
+					// let the user pick a category
+					pickCategory = true;
 
-		// let the user pick a category
-		pickCategory = true;
+					// make transition
+					other.GetComponent<MakeTransitionToRooms>().enterRoom1();
+				}
+				break;
+			case "Dungeon_exit":
+				// end message
+				StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("Congratulations. You have escaped the dungeon!"));
+				m_MyText.text = "Congratulations. You have escaped the dungeon!";
+				resetWaitTime(200);
 
-		// make transition
-		other.GetComponent<MakeTransitionToRoom1>().makeTransitionStart();
+				// remove dungeon
+				other.GetComponent<MakeTransitionToRooms>().exitDungeon();
+
+				// deactivate speech to Text
+				if (WatsonSpeechToText.GetComponent<ExampleStreaming>())
+					WatsonSpeechToText.GetComponent<ExampleStreaming>().Active = false;
+				break;
+			default:
+				Debug.Log("Collision with: " + other.name);
+				break;	
+		}
     }
 }

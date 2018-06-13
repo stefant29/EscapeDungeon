@@ -303,7 +303,7 @@
      <Compile Include="Assets\imports\Watson\ThirdParty\FullSerializer\Reflection\fsTypeCache.cs" />
      <Compile Include="Assets\imports\Watson\ThirdParty\MiniJSON\MiniJSON.cs" />
      <Compile Include="Assets\LoadImages.cs" />
-     <Compile Include="Assets\MakeTransitionToRoom1.cs" />
+     <Compile Include="Assets\MakeTransitionToRooms.cs" />
      <Compile Include="Assets\movePlayerToPoint.cs" />
      <Compile Include="Assets\SavWav.cs" />
      <Compile Include="Assets\SingleMicrophoneCapture.cs" />
@@ -322,6 +322,7 @@
      <None Include="Assets\imports\GoogleVR\Shaders\GvrReticleShader.shader" />
      <None Include="Assets\imports\GoogleVR\Shaders\GvrUIOverlay.shader" />
      <None Include="Assets\imports\GoogleVR\Plugins\Android\proguard-gvr.txt" />
+     <None Include="Assets\FantasyEnvironments\Environments\README.txt" />
      <None Include="Assets\imports\GoogleVR\Plugins\Android\AndroidManifest-Cardboard.xml" />
  <Reference Include="UnityEngine.UI">
  <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll</HintPath>
