@@ -19,14 +19,15 @@ public class Actions : MonoBehaviour {
 	public GameObject WatsonTextToSpeech;
 	public GameObject Picture;
 
-	public static List<GameObject> inventory = new List<GameObject> ();
+	private List<GameObject> inventory = new List<GameObject> ();
+	private Dictionary<GameObject, Transform> inventory_parents = new Dictionary<GameObject, Transform>(); 
 	private GameObject selectedItemInventory = null;
 	private bool goForward = false;
 	public Text m_MyText;
 
 	private bool pickCategory = false;
 
-	private int duration = 20;
+	private int duration = 30;
 
 	private int commandExecuted = 0;
 
@@ -35,17 +36,16 @@ public class Actions : MonoBehaviour {
 		commandExecuted = duration * (-1);
 
 		// Starting instructions
-		StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak(
-						"You are now in a dungeon. To escape it, you must firstly find the key to unlock the door. " + 
-						"To control the environment, just say what you want to happen. To move around, use GO and STOP."));
-		m_MyText.text = "You are now in a dungeon. To escape it, you must firstly find the key to unlock the door. " + 
-						"To control the environment, just say what you want to happen. To move around, use GO and STOP.";
-		resetWaitTime(330);
+		// StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak(
+		// 				"You are now in a dungeon. To escape it, you must firstly find the key to unlock the door. " + 
+		// 				"To control the environment, just say what you want to happen. To move around, use GO and STOP."));
+		// m_MyText.text = "You are now in a dungeon. To escape it, you must firstly find the key to unlock the door. " + 
+		// 				"To control the environment, just say what you want to happen. To move around, use GO and STOP.";
+		
+		// // wait for 350 frames before the next command
+		// resetWaitTime(400);
 	}
 
-	public bool canTalk() {
-		return Time.frameCount - commandExecuted >= duration;
-	}
     // Update is called once per frame
     void Update() {
         if (!textMode && Input.GetKeyDown("t")) {
@@ -54,88 +54,79 @@ public class Actions : MonoBehaviour {
             inputField.ActivateInputField();
         }
 
-		if (Input.GetKeyDown("y")) {
+		if (Input.GetKeyDown("y"))
 			Stop();
-        }
 
-		if (!canTalk()) {
-			// Debug.Log("set to false");
-			// TODO: uncomment
-			// WatsonSpeechToText.GetComponent<ExampleStreaming>().Active = false;
-		}
-
+		// after "duration" frames, let the user speak again
 		if (commandExecuted > duration * (-1) && canTalk()) {
 			commandExecuted = duration * (-1);
+			duration = 30;
 			m_MyText.text = "You can now speak again.";
 
 			// TODO: uncomment
-			// StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("You can now speak again."));
-
-			// TODO: uncomment
-			// WatsonSpeechToText.GetComponent<ExampleStreaming>().Active = true;
+			StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("You can now speak again."));
 		}
 
-		// Go forward
+		// Go forward only if "go" command was given
 		if (goForward) {
 			// Move to a point in front of the camera
 			movePlayerToPoint.moveToPoint(_camera.transform.position + _camera.transform.forward * 0.01f);
 
 			// If an object is in front of the camera, stop going forward
 			if (ObjectBetween(_camera.transform.position, _camera.transform.position + _camera.transform.forward * 2f))
-			// if (ObjectBetween(_camera.transform.position, _camera.transform.forward, 0.1f))
 				goForward = false;
 		}
 
-		/* Draw lines from player (camera) to each door */
-		/* 
-			GameObject[] objs = GameObject.FindGameObjectsWithTag ("Door");
-			Color[] colors = {Color.red, Color.black, Color.yellow};
-			for (int i = 0; i < objs.Length; i++) {
-				Vector3 fromPosition = _camera.transform.position;
-				Vector3 toPosition = objs[i].GetComponent<Renderer>().bounds.center;
-				Vector3 direction = toPosition - fromPosition;
-				Debug.DrawRay(fromPosition, direction, colors[i]);
-			}
-		*/
-		Debug.DrawLine(_camera.transform.position, _camera.transform.position + _camera.transform.forward * 0.01f, Color.red);
-
 		/* Move selectedItemInventory ahead of the player */
 		if (selectedItemInventory) {
+			// the new position for selectedItemInventory
 			Vector3 newPos = _camera.transform.position + _camera.transform.forward * 2.0f;
+
 			// keep item on top of ground and not too high
 			newPos.y = Mathf.Clamp(newPos.y, _camera.transform.position.y * 0.25f, _camera.transform.position.y * 0.75f);
 			
+			// set position for selectedItemInventory
 			selectedItemInventory.transform.position = newPos;
+
+			// set rotation for selectedItemInventory
 			selectedItemInventory.transform.rotation = new Quaternion( 0.0f, _camera.transform.rotation.y, 0.0f, _camera.transform.rotation.w );
 		}
     }
 
-	/* returns True if an object is between the two positions given as parameters */
+	/* Returns true if the user can talk again: 
+	 *	"duration" frames passed since the last coomand was executed 
+	 */
+	public bool canTalk() {
+		return Time.frameCount - commandExecuted >= duration;
+	}
+
+	/* Returns True if an object is between the two positions given as parameters */
 	private bool ObjectBetween(Vector3 startPos, Vector3 endPos) {
 		RaycastHit hitInfo;
-		return Physics.Linecast(startPos, endPos, out hitInfo) && hitInfo.collider.name != "Floor";
+
+		// cast a ray from startPos to endPos and see if there is an object between then except the floor
+		return Physics.Linecast(startPos, endPos, out hitInfo) && 
+					hitInfo.collider.name != "Floor" && hitInfo.collider.name != selectedItemInventory.name;
 	}
 
-	private bool ObjectBetween(Vector3 startPos, Vector3 direction, float radius) {
-		RaycastHit hitInfo;
-		return Physics.SphereCast(startPos, radius, direction, out hitInfo, 1f) && hitInfo.collider.name != "Floor";
-	}
-
-    GameObject getObjectInSight(string tag, float delta) {
+	/* Returns the object with given tag in camera's sight and in a given range (delta) */
+    private GameObject getObjectInSight(string tag, float delta) {
+		// get all objects with given tag
 		GameObject[] objs = GameObject.FindGameObjectsWithTag (tag);
-		for (int i = 0; i < objs.Length; i++) {
-			/* find the object in range of player's sight */
-			if (inRangeSight (objs[i].GetComponent<BoxCollider>().bounds.center, delta, tag)) {
-				/* return the object */
-				Debug.Log ("Object " + objs[i].name + " found.");	
+
+		for (int i = 0; i < objs.Length; i++) 
+			// find the object in range of player's sight
+
+			if (inRangeSight (objs[i].GetComponent<BoxCollider>().bounds.center, delta, tag))
+				// return the object 
 				return objs[i];
-			}
-		}
+
+		// no object was found
 		return null;
 	}
 
-	/* returns true if the given item is in range and in sight */
-	public bool inRangeSight(Vector3 position, float delta, string tag) {
+	/* Returns true if the given item is in range and in sight */
+	private bool inRangeSight(Vector3 position, float delta, string tag) {
 		Vector3 point = _camera.WorldToViewportPoint(position);
 		RaycastHit hitInfo;
 
@@ -144,19 +135,20 @@ public class Actions : MonoBehaviour {
 				// and no other objects are in between the camera and the given position?
 				Physics.Linecast(_camera.transform.position, position, out hitInfo) && hitInfo.collider.tag == tag;
 
+		// if no tag was provided, do not check for tag match with the collider
 		return point.z > 0 && point.z < delta && point.x > 0 && point.x < 1 && point.y > 0 && point.y < 1 &&
 			Physics.Linecast(_camera.transform.position, position, out hitInfo);			
 	}
 
-	/* method called when the "InputField" is changed */
+	/* Method called when the "InputField" is changed */
 	public void activateFocus(string input) {
 		textMode = true;
 	}
 
-	/* replace spaces with %20 */
+	/* Set credentials and call WitAI with a given message,
+	 *	then parse the response into actions
+	 */
 	public IEnumerator callWitAI (string message) {
-		Debug.Log("Called Wit.AI WITH: " + message);
-		// Debug.Log("Wit call: " + message);
 		// construct the headers needed to authenticate on wit.ai
 		Dictionary<string, string> headers = new Dictionary<string,string>();
 		headers.Add("Authorization", "Bearer QLLF3GMFKHF3L5ZHYPNO6KJU2D2ZP4EE");
@@ -170,28 +162,28 @@ public class Actions : MonoBehaviour {
 		// parse and call methods returned from wit.ai
 		parse_WIT_response(www.text);
 
-		
+		// update the time frame when the last command is executed
 		commandExecuted = Time.frameCount;
 	}
 
-	// Set the ending time of an action as current frame and reset duration to a given duration
+	/* Set the ending time of an action as current frame 
+	 *	and reset duration to a given parameter
+	 */
 	private void resetWaitTime(int time) {
 		commandExecuted = Time.frameCount;
 		duration = time;
 	}
 
-    /* parse response received from WIT */
+    /* parse response received from WIT AI */
     public void parse_WIT_response(string WIT_response) {
         /* convert response to JSON object */
         JObject jObject = JObject.Parse(WIT_response);
-		Debug.Log("response from WIT: " + jObject);
-	
-		m_MyText.text = jObject["_text"].ToString();
+		// m_MyText.text = jObject["_text"].ToString(); TODO????
 
         /* get entities from response */
         JToken jEntities = jObject["entities"];
 
-        /* get actions and parameters */
+        /* get actions and parameters, numbers and quiz types */
         JArray jActions = (JArray)jEntities["intent"];
         JArray jParameters = (JArray)jEntities["parameter"];
         JArray jNumbers = (JArray)jEntities["number"];
@@ -200,13 +192,14 @@ public class Actions : MonoBehaviour {
         // deactivate the text InputField 
         textMode = false;
 
-		Debug.Log(jObject);
-
 		/* if a quiz category was given */
 		if (pickCategory && jQuiz != null) {
 			if (jQuiz.Count > 1) {
-				// StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("Your response must contain only one category."));
+				// tell the user only one category is allowed
+				StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("Your response must contain only one category."));
 				m_MyText.text = "Your response must contain only one category.";
+				
+				// wait for 90 frames to speak the instructions
 				resetWaitTime(90);
 			} else {
 				foreach (JToken Quiz in jQuiz) {
@@ -216,9 +209,12 @@ public class Actions : MonoBehaviour {
 					Picture.GetComponent<LoadImages>().setRandomResponses();
         			Picture.GetComponent<LoadImages>().loadNextImage();
 
-					// StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak(
-						// "To pass to the next room, you have to correctly guess the next pictures. Look at the options and answer with the number you think is correct."));
+					// instruct the user to the next steps he must take
+					StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak(
+						"To pass to the next room, you have to correctly guess the next pictures. Look at the options and answer with the number you think is correct."));
 					m_MyText.text = "To pass to the next room, you have to correctly guess the next pictures. Look at the options and answer with the number you think is correct.";
+				
+					// wait for 90 frames to speak the instructions
 					resetWaitTime(220);
 				}
 			}
@@ -227,28 +223,33 @@ public class Actions : MonoBehaviour {
 		 /* if a number was given */
         if (jNumbers != null) {
 			if (jNumbers.Count > 1) {
-				// StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("Your response must contain only one number."));
+				// tell the user only one number must be chosen
+				StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("Your response must contain only one number."));
 				m_MyText.text = "Your response must contain only one number.";
+				
+				// wait for 90 frames to speak the instructions
 				resetWaitTime(90);
 			} else {
 				foreach (JToken JNumber in jNumbers) {
 					int response = (int)(JNumber["value"]);
 					if (Picture.GetComponent<LoadImages>().checkCorrect(response)) {
-						// StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("Good."));
+						// congratulate the user on success
+						StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("Good."));
 						m_MyText.text = "Good.";
-						resetWaitTime(20);
+						
+						// wait for 30 frames to speak the instructions
+						resetWaitTime(30);
 					} else {
-						// StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("Wrong guess. Try again."));
+						// tell the user the answer is incorrect
+						StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("Wrong guess. Try again."));
 						m_MyText.text = "Wrong guess. Try again.";
+
+						// wait for 90 frames to speak the instructions
 						resetWaitTime(50);
 					}
 				}
 			}
 		}
-
-		// TODO: "unlock and open the door" -> GOOD
-		// TODO: "open and unlock the door" -> JUST UNLOCK!!!!
-		// rezolvare in ordine: chiar daca se primeste "open and unlock", rezolva mai intai UNLOCK, apoi OPEN
 
         /* if an action exists */
         if (jActions != null)
@@ -275,9 +276,6 @@ public class Actions : MonoBehaviour {
     public void parseInput(string input) {
 		// set response guide for user
 		m_MyText.text = "Waiting for response from WIT.ai";
-		// TODO: uncomment
-		// StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("Processing..."));
-		// resetWaitTime(70);
 
 		// send input to WIT to parse: replace space with %20
 		StartCoroutine(callWitAI(input.Replace(" ", "%20")));
@@ -312,10 +310,13 @@ public class Actions : MonoBehaviour {
 
 	/* Open the object with tag given as parameter */
 	public void open(string parameter) {
-		/* switch on what to open */
+		// switch on what to open
 		switch (parameter) {
 		case "door":
+			// find the door which is in sight
 			GameObject door = getObjectInSight("Door", 5f);
+
+			// atempt to unlock the door only if there is one and it is locked
 			if (door && !door.GetComponent<Door> ().locked)
 				StartCoroutine (door.GetComponent<Door> ().Move ());
 			break;
@@ -327,7 +328,10 @@ public class Actions : MonoBehaviour {
 
 	/* Take into hand/inventory the object with tag given as parameter */
 	public void take(string parameter) {
+		// get the object with given tag that is in sight
 		GameObject object_to_take = getObjectInSight(FirstLetterToUpper(parameter), 5f);
+
+		// only if the given object is found and is not already in inventory
 		if (object_to_take && !inventory.Contains(object_to_take)) {
 			// add key to inventory list
 			inventory.Add (object_to_take);
@@ -337,6 +341,9 @@ public class Actions : MonoBehaviour {
 			
 			// Select item
 			selectedItemInventory = object_to_take;
+
+			// save parent
+			inventory_parents[selectedItemInventory] = selectedItemInventory.transform.parent;
 
 			// Set parent as null
 			selectedItemInventory.transform.SetParent(null);
@@ -351,31 +358,39 @@ public class Actions : MonoBehaviour {
 
 	/* Drops current item form hand */
 	public void DropCurrentItem() {
+		// if an item exists in the inventory
 		if (selectedItemInventory) {
 			// Add rigidBody to item deselected
 			selectedItemInventory.AddComponent<Rigidbody>();
 			selectedItemInventory.GetComponent<Rigidbody>().mass = 10000;
+
 			// remove the collider
 			selectedItemInventory.GetComponent<BoxCollider>().isTrigger = false;
+
+			// reset the parent
+			selectedItemInventory.transform.SetParent(inventory_parents[selectedItemInventory]);
+
 			// remove item from inventory
 			inventory.Remove(selectedItemInventory);
+			inventory_parents.Remove(selectedItemInventory);
+
 			// set current item to null
 			selectedItemInventory = null;
 		}
 	}
 
+	/* Unlock an object with the tag given as parameter */
 	public void unlock(string parameter) {
-		/* switch on what to unlock */
+		// switch on what to unlock
 		switch (parameter) {
 		case "door":
+			// get the door in sight and in range
 			GameObject door = getObjectInSight("Door", 5f);
-			// Debug.Log("Dooor: " + door);
-			if (door && door.GetComponent<Door> ().locked)// {
-				// Debug.Log("if locked");
+
+			// if a door was found and is locked
+			if (door && door.GetComponent<Door> ().locked)
+				// unlock the door
 				useInventoryKey (door);
-			// } else {
-				// Debug.Log("ELSE LOCKED");
-			// }
 			break;
 		default:
 			Debug.LogError ("input unknown: Cannot unlock " + parameter);
@@ -404,23 +419,27 @@ public class Actions : MonoBehaviour {
 
 		// if tag given, go to object with tag
 		GameObject go_to_object = getObjectInSight(FirstLetterToUpper(parameter), 15f);
-		if (go_to_object) {
-			Debug.Log("Go 1");
+		if (go_to_object) 
 			movePlayerToPoint.moveToObject(go_to_object, 2f);
-		} else
-			Debug.Log("Go 2");
 	}
 
 	/* unlock the given door */
 	public bool useInventoryKey(GameObject door) {
+		// go through inventory
 		for (int i = 0; i < inventory.Count; i++) {
+			// find a key that can unlock the door
 			if (inventory [i].tag == "Key" && door.GetComponent<Door> ().unlock (inventory [i])) {
-				Debug.Log("destroying: " + inventory[i]);
+				// destory the key
 				Destroy(inventory[i]);
+
+				// remove the key from inventory
 				inventory.Remove (inventory [i]);
+
+				// the door was unlocked -> success
 				return true;
 			}
 		}
+		// the door was not unlocked -> fail
 		return false;
 	}
 
@@ -433,6 +452,7 @@ public class Actions : MonoBehaviour {
 		movePlayerToPoint.moveToObject(gameObject, 2f);
 	}
 
+	/* define behavior on collision between player and objects */
 	void OnTriggerEnter(Collider other) {
 		switch (other.name) {
 			case "Room1_enter":

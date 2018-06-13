@@ -7,7 +7,6 @@ using System.Globalization;
 using System.Threading;
 using System.IO;
 
-// using UnityEditor;
 using Newtonsoft.Json.Linq;
  
 [RequireComponent (typeof (AudioSource))]

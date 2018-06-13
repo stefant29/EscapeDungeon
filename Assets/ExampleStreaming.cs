@@ -185,11 +185,15 @@ public class ExampleStreaming : MonoBehaviour
                         if (text.Replace(" ", "").Equals("stop"))
                             player.GetComponent<Actions>().Stop();
                         // if the player is allowed to talk, call WIT Ai with the spoken command
-                        else if (player.GetComponent<Actions>().canTalk())
+                        else if (player.GetComponent<Actions>().canTalk()) {
+                                // call WIT Ai with the spoken command
                                 StartCoroutine(player.GetComponent<Actions>().callWitAI(text.Replace(" ", "%20")));
+                                
+                                // write text spoken on screen
+                                ResultsField.text = text;
+                        } else
+                                Debug.Log("================cannot send message to WIT now,");
                     }
-                    // write text spoken on screen
-                    ResultsField.text = text;
                 }
 
                 if (res.keywords_result != null && res.keywords_result.keyword != null)
