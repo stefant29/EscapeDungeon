@@ -36,14 +36,8 @@ public class Actions : MonoBehaviour {
 		commandExecuted = duration * (-1);
 
 		// Starting instructions
-		// StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak(
-		// 				"You are now in a dungeon. To escape it, you must firstly find the key to unlock the door. " + 
-		// 				"To control the environment, just say what you want to happen. To move around, use GO and STOP."));
-		// m_MyText.text = "You are now in a dungeon. To escape it, you must firstly find the key to unlock the door. " + 
-		// 				"To control the environment, just say what you want to happen. To move around, use GO and STOP.";
-		
-		// // wait for 350 frames before the next command
-		// resetWaitTime(400);
+		speak("You are now in a dungeon. To escape it, you must firstly find the key to unlock the door. " + 
+						"To control the environment, just say what you want to happen. To move around, use GO and STOP.", 400);
 	}
 
     // Update is called once per frame
@@ -62,9 +56,6 @@ public class Actions : MonoBehaviour {
 			commandExecuted = duration * (-1);
 			duration = 30;
 			m_MyText.text = "You can now speak again.";
-
-			// TODO: uncomment
-			StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("You can now speak again."));
 		}
 
 		// Go forward only if "go" command was given
@@ -194,14 +185,10 @@ public class Actions : MonoBehaviour {
 
 		/* if a quiz category was given */
 		if (pickCategory && jQuiz != null) {
-			if (jQuiz.Count > 1) {
+			if (jQuiz.Count > 1)
 				// tell the user only one category is allowed
-				StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("Your response must contain only one category."));
-				m_MyText.text = "Your response must contain only one category.";
-				
-				// wait for 90 frames to speak the instructions
-				resetWaitTime(90);
-			} else {
+				speak("Your response must contain only one category.", 90);
+			else {
 				foreach (JToken Quiz in jQuiz) {
 					string response = (string)(Quiz["value"]);
 					// select the domain, set the responses and load the first image
@@ -210,43 +197,26 @@ public class Actions : MonoBehaviour {
         			Picture.GetComponent<LoadImages>().loadNextImage();
 
 					// instruct the user to the next steps he must take
-					StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak(
-						"To pass to the next room, you have to correctly guess the next pictures. Look at the options and answer with the number you think is correct."));
-					m_MyText.text = "To pass to the next room, you have to correctly guess the next pictures. Look at the options and answer with the number you think is correct.";
-				
-					// wait for 90 frames to speak the instructions
-					resetWaitTime(220);
+					speak("To pass to the next room, you have to correctly guess the next pictures. " + 
+							"Look at the options and answer with the number you think is correct.", 220);
 				}
 			}
 		}
 
 		 /* if a number was given */
         if (jNumbers != null) {
-			if (jNumbers.Count > 1) {
+			if (jNumbers.Count > 1)
 				// tell the user only one number must be chosen
-				StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("Your response must contain only one number."));
-				m_MyText.text = "Your response must contain only one number.";
-				
-				// wait for 90 frames to speak the instructions
-				resetWaitTime(90);
-			} else {
+				speak("Your response must contain only one number.", 90);
+			else {
 				foreach (JToken JNumber in jNumbers) {
 					int response = (int)(JNumber["value"]);
-					if (Picture.GetComponent<LoadImages>().checkCorrect(response)) {
+					if (Picture.GetComponent<LoadImages>().checkCorrect(response)) 
 						// congratulate the user on success
-						StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("Good."));
-						m_MyText.text = "Good.";
-						
-						// wait for 30 frames to speak the instructions
-						resetWaitTime(30);
-					} else {
+						speak("Good.", 30);
+					else
 						// tell the user the answer is incorrect
-						StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("Wrong guess. Try again."));
-						m_MyText.text = "Wrong guess. Try again.";
-
-						// wait for 90 frames to speak the instructions
-						resetWaitTime(50);
-					}
+						speak("Wrong guess. Try again.", 50);
 				}
 			}
 		}
@@ -452,14 +422,18 @@ public class Actions : MonoBehaviour {
 		movePlayerToPoint.moveToObject(gameObject, 2f);
 	}
 
+	public void speak(string message, int duration) {
+		StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak(message));
+		m_MyText.text = message;
+		resetWaitTime(duration);
+	}
+
 	/* define behavior on collision between player and objects */
 	void OnTriggerEnter(Collider other) {
 		switch (other.name) {
 			case "Room1_enter":
 				if (!pickCategory) {
-					StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("Please pick a category: ACTORS, CARS, CARTOONS or PAINTINGS."));
-					m_MyText.text = "Please pick a category: ACTORS, CARS, CARTOONS or PAINTINGS.";
-					resetWaitTime(160);
+					speak("Please pick a category: ACTORS, CARS, CARTOONS or PAINTINGS.", 160);
 
 					// let the user pick a category
 					pickCategory = true;
@@ -470,9 +444,7 @@ public class Actions : MonoBehaviour {
 				break;
 			case "Dungeon_exit":
 				// end message
-				StartCoroutine(WatsonTextToSpeech.GetComponent<ExampleTextToSpeech>().Speak("Congratulations. You have escaped the dungeon!"));
-				m_MyText.text = "Congratulations. You have escaped the dungeon!";
-				resetWaitTime(200);
+				speak("Congratulations. You have escaped the dungeon!", 200);
 
 				// remove dungeon
 				other.GetComponent<MakeTransitionToRooms>().exitDungeon();

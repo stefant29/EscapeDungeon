@@ -13,6 +13,10 @@ public class LoadImages : MonoBehaviour {
     public Text Response2;
     public Text Response3;
     public Text Response4;
+
+    // Player
+    public GameObject player;
+
     
     // dictionary with keys - strings and values - urls
     private Dictionary<string, string> urls = new Dictionary<string, string>();
@@ -46,6 +50,9 @@ public class LoadImages : MonoBehaviour {
                 Response3.text = "";
                 Response4.text = "";
                 GetComponent<Renderer>().material.mainTexture = null;
+
+                // congratulate message
+                player.GetComponent<Actions>().speak("Good, you are now allowed to pass through the door.", 200);
             }
             return true;
         }

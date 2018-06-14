@@ -1381,7 +1381,7 @@ Prefab:
     m_Modifications:
     - target: {fileID: 4310065808766476, guid: 64e321d3fdc93af4186fae5eace9a0f0, type: 2}
       propertyPath: m_LocalPosition.x
-      value: -2.527
+      value: 16.71
       objectReference: {fileID: 0}
     - target: {fileID: 4310065808766476, guid: 64e321d3fdc93af4186fae5eace9a0f0, type: 2}
       propertyPath: m_LocalPosition.y
@@ -1389,7 +1389,7 @@ Prefab:
       objectReference: {fileID: 0}
     - target: {fileID: 4310065808766476, guid: 64e321d3fdc93af4186fae5eace9a0f0, type: 2}
       propertyPath: m_LocalPosition.z
-      value: -1.96
+      value: 18.64
       objectReference: {fileID: 0}
     - target: {fileID: 4310065808766476, guid: 64e321d3fdc93af4186fae5eace9a0f0, type: 2}
       propertyPath: m_LocalRotation.x
@@ -1476,6 +1476,14 @@ Prefab:
         type: 2}
       propertyPath: m_Depth
       value: -1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4729479047491088, guid: 64e321d3fdc93af4186fae5eace9a0f0, type: 2}
+      propertyPath: m_LocalPosition.x
+      value: 0.07
+      objectReference: {fileID: 0}
+    - target: {fileID: 4729479047491088, guid: 64e321d3fdc93af4186fae5eace9a0f0, type: 2}
+      propertyPath: m_LocalPosition.z
+      value: 2.36
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: 64e321d3fdc93af4186fae5eace9a0f0, type: 2}
@@ -2930,6 +2938,7 @@ MonoBehaviour:
   Response2: {fileID: 551518054}
   Response3: {fileID: 1634293965}
   Response4: {fileID: 18089764}
+  player: {fileID: 20622158}
 --- !u!23 &1055609628
 MeshRenderer:
   m_ObjectHideFlags: 0
