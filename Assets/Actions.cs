@@ -61,11 +61,11 @@ public class Actions : MonoBehaviour {
 		// Go forward only if "go" command was given
 		if (goForward) {
 			// Move to a point in front of the camera
-			movePlayerToPoint.moveToPoint(_camera.transform.position + _camera.transform.forward * 0.01f);
+			movePlayerToPoint.moveToPoint(_camera.transform.position + _camera.transform.forward * 0.01f, 0.1f);
 
 			// If an object is in front of the camera, stop going forward
 			if (ObjectBetween(_camera.transform.position, _camera.transform.position + _camera.transform.forward * 2f))
-				goForward = false;
+				Stop();
 		}
 
 		/* Move selectedItemInventory ahead of the player */
@@ -96,8 +96,11 @@ public class Actions : MonoBehaviour {
 		RaycastHit hitInfo;
 
 		// cast a ray from startPos to endPos and see if there is an object between then except the floor
-		return Physics.Linecast(startPos, endPos, out hitInfo) && 
-					hitInfo.collider.name != "Floor" && hitInfo.collider.name != selectedItemInventory.name;
+		string name = "";
+		if (selectedItemInventory)
+			name = selectedItemInventory.name;
+		return  Physics.Linecast(startPos, endPos, out hitInfo) && hitInfo.collider &&
+					hitInfo.collider.name != "Floor" && hitInfo.collider.name != name;
 	}
 
 	/* Returns the object with given tag in camera's sight and in a given range (delta) */
@@ -170,6 +173,7 @@ public class Actions : MonoBehaviour {
         /* convert response to JSON object */
         JObject jObject = JObject.Parse(WIT_response);
 		// m_MyText.text = jObject["_text"].ToString(); TODO????
+		Debug.Log(jObject);
 
         /* get entities from response */
         JToken jEntities = jObject["entities"];
@@ -287,8 +291,11 @@ public class Actions : MonoBehaviour {
 			GameObject door = getObjectInSight("Door", 5f);
 
 			// atempt to unlock the door only if there is one and it is locked
-			if (door && !door.GetComponent<Door> ().locked)
-				StartCoroutine (door.GetComponent<Door> ().Move ());
+			if (door)
+				if (!door.GetComponent<Door> ().locked)
+					StartCoroutine (door.GetComponent<Door> ().Move ());
+				else
+					speak("The door is locked!", 100);
 			break;
 		default:
 			Debug.LogError ("input unknown: Cannot open " + parameter);
@@ -395,6 +402,11 @@ public class Actions : MonoBehaviour {
 
 	/* unlock the given door */
 	public bool useInventoryKey(GameObject door) {
+		if (inventory.Count <= 0) {
+			speak("There is no key to unlock with", 100);
+			return false;
+		}
+
 		// go through inventory
 		for (int i = 0; i < inventory.Count; i++) {
 			// find a key that can unlock the door
@@ -409,6 +421,7 @@ public class Actions : MonoBehaviour {
 				return true;
 			}
 		}
+
 		// the door was not unlocked -> fail
 		return false;
 	}

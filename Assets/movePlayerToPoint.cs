@@ -19,12 +19,15 @@ public class movePlayerToPoint : MonoBehaviour {
 
 	void Update () {
 		/* if player is at the target position, stop movement */
-		if (!moveEnded && equals(target, transform.position, EPSILON)) 
+		if (!moveEnded && equals(target, transform.position, EPSILON))  {
 			moveEnded = true;
+			// GetComponent<Actions>().Stop();
+		}
 	
 		/* move towards the specified target */
 		if (!moveEnded) 
-			transform.position = Vector3.MoveTowards (transform.position, target, speed * Time.deltaTime);
+			transform.position = Vector3.MoveTowards (transform.position, 
+						new Vector3 (target.x, transform.position.y, target.z), speed * Time.deltaTime);
 	}
 
 	/* start movement to given vector target */
@@ -34,6 +37,7 @@ public class movePlayerToPoint : MonoBehaviour {
 		// set the position x/z (y is constant - player's y)
 		target.x = target_vector.x;
 		target.z = target_vector.z;
+
 		/* set moving not ended */
 		moveEnded = false;
 	}

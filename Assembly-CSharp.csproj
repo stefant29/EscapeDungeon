@@ -322,7 +322,7 @@
      <None Include="Assets\imports\GoogleVR\Shaders\GvrReticleShader.shader" />
      <None Include="Assets\imports\GoogleVR\Shaders\GvrUIOverlay.shader" />
      <None Include="Assets\imports\GoogleVR\Plugins\Android\proguard-gvr.txt" />
-     <None Include="Assets\FantasyEnvironments\Environments\README.txt" />
+     <None Include="Assets\imports\FantasyEnvironments\Environments\README.txt" />
      <None Include="Assets\imports\GoogleVR\Plugins\Android\AndroidManifest-Cardboard.xml" />
  <Reference Include="UnityEngine.UI">
  <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll</HintPath>

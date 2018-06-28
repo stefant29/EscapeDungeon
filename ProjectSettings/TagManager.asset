@@ -11,6 +11,8 @@ TagManager:
   - Torch
   - Frame
   - Picture
+  - Bed
+  - Barrel
   layers:
   - Default
   - TransparentFX
